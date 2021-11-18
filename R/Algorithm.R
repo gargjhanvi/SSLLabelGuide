@@ -93,7 +93,7 @@ ChooseAlgorithm <- function(X, Y, C = 5, K = NULL) {
 
 # Z - m1 * p matrix of unlabeled data
 
-#' Title SSLconf function arranges the unlabeled data points based on the confidence of prediction
+#' SSLconf function arranges the unlabeled data points based on the confidence of prediction
 #'
 #' @param X n1 * p matrix of labelled data points. Here the rows contains the n1 labelled data points. Each data point belongs to R^p
 #' @param Y n1 vector of labels for data points in X
@@ -221,4 +221,40 @@ SSLconf <- function(X, Y, Z, K = NULL) {
   return(list(conf = conf, High = High, Low = Low, Average = Average, Remat = Yes))
 }
 
+# Function SSLBudget
 
+#' SSLBudget outputs what unlabeled data points should be labelled based on the budget
+#'
+#' @param X n1 * p matrix of labelled data points. Here the rows contains the n1 labelled data points. Each data point belongs to R^p
+#' @param Y n1 vector of labels for data points in X
+#' @param L positive integer - number of data points that user can label
+#' @param Z m1*p matrix of Unlabeled data points
+#' @param K number of classes
+#'
+#' @return Tolabel - A L*p matrix of data points from Z that user should label
+#' @export
+#'
+#' @examples
+#' #' data = iris
+#' data = data[sample(1:150), ]
+#' X = data[1:25,1:4]
+#' Y = data[1:25,5]
+#' Z = data[26:150, 1:4]
+#' K = 3
+#' SSLBudget(X, Y, 5, Z, K)
+#'
+SSLBudget <- function(X, Y, L, Z, K = NULL) {
+  out <- SSLconf(X, Y, Z, C = 5, K)
+  Low <- out$Remat
+  Cluster_labels <- MyKmeans(Low, L)
+  Clusters <- vector(mode = "list", length = L)
+  for (i in 1:L) {
+    Clusters[[i]] <- as.matrix(Low[Cluster_labels == i, ])
+  }
+  ToLabel <- matrix(0, L, ncol(Z))
+  for (i in 1:L) {
+    ToLabel[i, ] <- Clusters[[i]][sample(1:nrow(Clusters[[i]]), 1), ]
+  }
+
+  return(ToLabel)
+}
