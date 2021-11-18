@@ -1,0 +1,20 @@
+Package: SSLLabelGuide
+Title: Classify what data points should be labelled(for training) based on budget constraints and very small or no labelled data for semi supervised learning, predict the labels of unlabelled data and determine the confidence of labelling them.
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Jhanvi",
+           family = "Garg",
+           role = c("aut", "cre"),
+           email = "gargjhanvi@tamu.edu")
+Description: Suppose we have a very small number of labelled data points n and very large number of unlabelled data points m (we need to predict the labels) and suppose there are K classes. The package compares various algorithms(like similar to Multi class SVM, KNN) on the data using cross validation technique. Suppose the user can label L more data points (budget constraint). The function ”SSLBudget” in the package will output which L data points should be labelled (based on previously labelled data and unlabelled data) so that we can predict the labels of the unlabelled data with higher confidence. The function ”SSLConf” will rank and color code the data points on how confidently it can be predicted. The function ” SSLpredict” outputs the prediction of labels for the unlabelled data based on the algorithms compared before.
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Imports: 
+    caret,
+    crayon,
+    DMwR2,
+    dplyr,
+    e1071
