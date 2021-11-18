@@ -2,7 +2,7 @@
 % Please edit documentation in R/Algorithm.R
 \name{SSLconf}
 \alias{SSLconf}
-\title{Title}
+\title{SSLconf function arranges the unlabeled data points based on the confidence of prediction}
 \usage{
 SSLconf(X, Y, Z, K = NULL)
 }
@@ -19,7 +19,7 @@ SSLconf(X, Y, Z, K = NULL)
 A list with five components, conf - A matrix with data points of Z arranged from high to low confidence of prediction, High - A matrix containing data points of Z that are predicted with high confidence, Low - A matrix containing data points of Z that are predicted with low confidence, Average - A matrix containing data points of Z that are predicted with moderate confidence, Remat - A matrix containing data points of Z that should possibly be relabeled
 }
 \description{
-Title
+SSLconf function arranges the unlabeled data points based on the confidence of prediction
 }
 \examples{
 data = iris
