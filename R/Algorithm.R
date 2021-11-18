@@ -68,3 +68,23 @@ Algorithm <- function(X, Y, C = 5, K = NULL) {
   }
   return(list(error_svm = error_svm, error_knn = error_knn))
 }
+
+# Returns which algorithm among SVM and KNN performs better on the labelled data set using cross validation technique
+ChooseAlgorithm <- function(X, Y, C = 5, K = NULL) {
+  Total_svm_error <- 0
+  Total_KNN_error <- 0
+
+  # Comparing cross validation error
+
+  for (i in 1:25) {
+    out <- Algorithm(X, Y, C, K)
+    Total_svm_error <- Total_svm_error + out$error_svm
+    Total_KNN_error <- Total_KNN_error + out$error_knn
+  }
+
+  if (Total_svm_error >= Total_KNN_error) {
+    return("We will use KNN Algorithm")
+  } else {
+    return("We will use Multiclass SVM Algorithm")
+  }
+}
