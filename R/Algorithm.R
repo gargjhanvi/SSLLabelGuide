@@ -258,3 +258,39 @@ SSLBudget <- function(X, Y, L, Z, K = NULL) {
 
   return(ToLabel)
 }
+
+
+#' SSLpredict predicts the labels for unlabeled data
+#'
+#' @param X n1 * p matrix of labelled data points. Here the rows contains the n1 labelled data points. Each data point belongs to R^p
+#' @param Y n1 vector of labels for data points in X
+#' @param Z m1*p matrix of Unlabeled data points
+#' @param K number of classes
+#'
+#' @return A m1 vector of predicted labels for data points in Z
+#'
+#' @export
+#'
+#' @examples
+#' #' #' data = iris
+#' data = data[sample(1:150), ]
+#' X = data[1:25,1:4]
+#' Y = data[1:25,5]
+#' Z = data[26:150, 1:4]
+#' K = 3
+#' SSLpredict(X, Y, 5, Z, K)
+#'
+SSLpredict <- function(X, Y, Z, K = NULL) {
+  out <- ChooseAlgorithm(X, Y, C = 5, K)
+  if (out == "We will use KNN Algorithm") {
+    kNN_fitting <- class::knn(X, Z, Y, round(sqrt(nrow(X))))
+    return(kNN_fitting)
+  }
+  if (out == "We will use Multiclass SVM Algorithm") {
+    labels <- as.factor(Y)
+    training_data <- cbind(X, labels)
+    SVM_model <- e1071::svm(labels ~ ., data = training_data, type = "C")
+    SVM_fitting <- predict(SVM_model, Z)
+    return(SVM_fitting)
+  }
+}
