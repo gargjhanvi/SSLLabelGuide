@@ -294,3 +294,36 @@ SSLpredict <- function(X, Y, Z, K = NULL) {
     return(SVM_fitting)
   }
 }
+
+
+
+#' Comparison error compares the error of unlabeled data points before labeling L points and after labeling L points that were given by SSLBudget function
+#'
+#' @param X n1 * p matrix of labelled data points. Here the rows contains the n1 labelled data points. Each data point belongs to R^p
+#' @param Y n1 vector of labels for data points in X
+#' @param Z m1*p matrix of Unlabeled data points
+#' @param W m1 vector of true labels of data points in Z
+#' @param new_data L*(p+1) matrix of data points that were given by SSLBudget appended with their true labels
+#' @param K number of classes
+#'
+#' @return A list with two components, error_before - hamming distance between true labels and predicted labels before user labels L data points suggested by SSLBudget, error_after - hamming distance between true labels and predicted labels after user labels L data points suggested by SSLBudget
+#'
+#' @export
+#'
+#' @examples
+#'
+Comparison_error <- function(X, Y, Z, W, new_data,  K = NULL) {
+  for (i in 1:nrow(newdata)) {
+    A <- rowsum(abs(Z - matrix(newdata[i, 1:p], nrow = nrow(Z))))
+    index <- which(A == 0)
+    Z <- Z[-index, ]
+  }
+  out <- SSLpredict(X, Y, Z, C = 5, K)
+
+  X1 <- rbind(X, new_data[, 1:p])
+  Y1 <- rbind(Y, new_data[, (p+1)])
+  out1 <- SSLpredict(X1, Y1, Z, C = 5, K)
+  error1 <- table(W, out)
+  error2 <- table(W, out1)
+  return(list(error_before = error1, error_after = error2))
+}
