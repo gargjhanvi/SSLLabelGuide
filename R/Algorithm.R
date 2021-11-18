@@ -88,3 +88,136 @@ ChooseAlgorithm <- function(X, Y, C = 5, K = NULL) {
     return("We will use Multiclass SVM Algorithm")
   }
 }
+
+
+
+# Z - m1 * p matrix of unlabeled data
+
+#' Title
+#'
+#' @param X n1 * p matrix of labelled data points. Here the rows contains the n1 labelled data points. Each data point belongs to R^p
+#' @param Y n1 vector of labels for data points in X
+#' @param Z m1*p matrix of Unlabeled data points
+#' @param K number of classes
+#' @return A list with five components, conf - A matrix with data points of Z arranged from high to low confidence of prediction, High - A matrix containing data points of Z that are predicted with high confidence, Low - A matrix containing data points of Z that are predicted with low confidence, Average - A matrix containing data points of Z that are predicted with moderate confidence, Remat - A matrix containing data points of Z that should possibly be relabeled
+#'
+#' @export
+#'
+#' @examples
+#' data = iris
+#' data = data[sample(1:150), ]
+#' X = data[1:25,1:4]
+#' Y = data[1:25,5]
+#' Z = data[26:150, 1:4]
+#' K = 3
+#' SSLconf(X, Y, Z, K)
+#'
+SSLconf <- function(X, Y, Z, K = NULL) {
+  nZ <- nrow(Z)
+  out <- ChooseAlgorithm(X, Y, C = 5, K)
+  K_for_kNN <- round(sqrt(nrow(X)))
+  if (out == "We will use KNN Algorithm") {
+    Probability <- predict(caret::knn3(X, Y, k = K_for_kNN), Z)
+    maximum <- apply(Probability, 1, max, na.rm = TRUE)
+    second_maximum <- apply(Probability, 1, function(row) max(row[-which.max(row)]))
+    Difference <- maximum - second_maximum
+    # Coloring the unlabeled data points
+    confidence_measure <- rep(0, nZ)
+    Relabel <- rep(0, nZ)
+    for (i in 1:nZ) {
+      if (Difference[i] >= round(2 * K_for_kNN / 3) / K_for_kNN) {
+        confidence_measure[i] <- "High"
+      }
+
+      if (Difference[i] >= round(K_for_kNN / 3) / K_for_kNN & Difference[i] < round(2 * K_for_kNN / 3) / K_for_kNN) {
+        confidence_measure[i] <- "Average"
+      }
+
+      if (Difference[i] < round(K_for_kNN / 3) / K_for_kNN) {
+        confidence_measure[i] <- "Low"
+      }
+      if (Difference[i] < 0.4) {
+        Relabel[i] <- 1
+      }
+    }
+  }
+
+  if (out == "We will use Multiclass SVM Algorithm") {
+    SVM_model <- e1071::svm(Y ~ ., data = cbind(X, Y), type = "C", probability = TRUE)
+    SVM_fitting <- predict(SVM_model, Z, probability = T)
+    Probability <- attr(SVM_fitting, "probabilities")
+    # Reorder unlabelled data points
+    maximum <- apply(Probability, 1, max, na.rm = TRUE)
+    second_maximum <- apply(Probability, 1, function(row) max(row[-which.max(row)]))
+    Difference <- maximum - second_maximum
+    # Coloring the unlabeled data points
+    confidence_measure <- rep(0, nZ)
+    Relabel <- rep(0, nZ)
+    for (i in 1:nZ) {
+      if (Difference[i] >= 0.70) {
+        confidence_measure[i] <- "High"
+      }
+
+      if (Difference[i] >= 0.30 & Difference[i] < 0.70) {
+        confidence_measure[i] <- "Average"
+      }
+
+      if (Difference[i] < 0.30) {
+        confidence_measure[i] <- "Low"
+      }
+      if (Difference[i] < 0.4) {
+        Relabel[i] <- 1
+      }
+    }
+  }
+
+  # Reorder unlabeled data points
+
+  attach <- cbind(Difference, maximum, 1:nZ)
+  attach <- attach[order(attach[, 2], decreasing = T), ]
+  attach <- attach[order(attach[, 1], decreasing = T), ]
+  conf <- cbind(Z[attach[, 3], ], confidence_measure)
+  High <- Z[confidence_measure == "High", ]
+  Average <- Z[confidence_measure == "Average", ]
+  Low <- Z[confidence_measure == "Low", ]
+  Yes <- Z[Relabel == 1, ]
+  No <- Z[Relabel == 0, ]
+  nhigh <- nrow(High)
+  nLow <- nrow(Low)
+  nAverage <- nrow(Average)
+  for (i in 1:ncol(Z)) {
+    # dev.new()
+    plot(rep(i, nhigh), High[, i],
+         col = "green", main = "Confidence of Prediction",
+         ylab = "Value at that feature",
+         xlab = "Feature "
+    )
+    points(rep(i, nLow), Low[, i], col = "red")
+    points(rep(i, nAverage), Average[, i], col = "yellow")
+    legend("topleft",
+           c("High", "Average", "Low"),
+           fill = c("green", "yellow", "red")
+    )
+  }
+
+  for (i in 1:ncol(Z)) {
+    for (j in ncol(Z)) {
+      if (j > i) {
+        # dev.new()
+        plot(High[, i], High[, j],
+             col = "green", main = "Confidence of Prediction", ylab = j,
+             xlab = i
+        )
+        points(Low[, i], Low[, j], col = "red")
+        points(Average[, i], Average[, j], col = "yellow")
+        legend("topleft",
+               c("High", "Average", "Low"),
+               fill = c("green", "yellow", "red")
+        )
+      }
+    }
+  }
+
+  return(list(conf = conf, High = High, Low = Low, Average = Average, Remat = Yes))
+}
+
