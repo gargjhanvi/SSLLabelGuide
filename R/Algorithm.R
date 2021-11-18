@@ -93,7 +93,7 @@ ChooseAlgorithm <- function(X, Y, C = 5, K = NULL) {
 
 # Z - m1 * p matrix of unlabeled data
 
-#' Title
+#' Title SSLconf function arranges the unlabeled data points based on the confidence of prediction
 #'
 #' @param X n1 * p matrix of labelled data points. Here the rows contains the n1 labelled data points. Each data point belongs to R^p
 #' @param Y n1 vector of labels for data points in X
@@ -220,4 +220,5 @@ SSLconf <- function(X, Y, Z, K = NULL) {
 
   return(list(conf = conf, High = High, Low = Low, Average = Average, Remat = Yes))
 }
+
 
