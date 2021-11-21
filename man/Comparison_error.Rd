@@ -25,6 +25,3 @@ A list with two components, error_before - hamming distance between true labels 
 \description{
 Comparison error compares the error of unlabeled data points before labeling L points and after labeling L points that were given by SSLBudget function
 }
-\examples{
-
-}
