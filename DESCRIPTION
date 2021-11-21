@@ -1,5 +1,5 @@
 Package: SSLLabelGuide
-Title: Classify what data points should be labelled(for training) based on budget constraints and very small or no labelled data for semi supervised learning, predict the labels of unlabelled data and determine the confidence of labelling them.
+Title: Classify what data points should be labelled(for training) based on budget constraints and very small or no labelled data for semi supervised learning, predict the labels of unlabelled data and determine the confidence of labelling them
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Jhanvi",
@@ -14,7 +14,13 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 Imports: 
     caret,
+    class,
     crayon,
+    datasets,
     DMwR2,
     dplyr,
-    e1071
+    e1071,
+    graphics,
+    stats
+Depends: 
+    R (>= 2.10)
