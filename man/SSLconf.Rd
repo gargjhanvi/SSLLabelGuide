@@ -22,12 +22,5 @@ A list with five components, conf - A matrix with data points of Z arranged from
 SSLconf function arranges the unlabeled data points based on the confidence of prediction
 }
 \examples{
-data = iris
-data = data[sample(1:150), ]
-X = data[1:25,1:4]
-Y = data[1:25,5]
-Z = data[26:150, 1:4]
-K = 3
-SSLconf(X, Y, Z, K)
 
 }
