@@ -23,13 +23,3 @@ Tolabel - A L*p matrix of data points from Z that user should label
 \description{
 SSLBudget outputs what unlabeled data points should be labelled based on the budget
 }
-\examples{
-#' data = iris
-data = data[sample(1:150), ]
-X = data[1:25,1:4]
-Y = data[1:25,5]
-Z = data[26:150, 1:4]
-K = 3
-SSLBudget(X, Y, 5, Z, K)
-
-}
