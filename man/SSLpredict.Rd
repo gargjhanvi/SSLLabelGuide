@@ -22,12 +22,11 @@ A m1 vector of predicted labels for data points in Z
 SSLpredict predicts the labels for unlabeled data
 }
 \examples{
-#' #' data = iris
-data = data[sample(1:150), ]
-X = data[1:25,1:4]
-Y = data[1:25,5]
-Z = data[26:150, 1:4]
-K = 3
-SSLpredict(X, Y, 5, Z, K)
-
+#'
+data(iris)
+data1 = iris[sample(1:150), ]
+X = data1[1:25,1:4]
+Y = data1[1:25,5]
+Z = data1[26:150, 1:4]
+SSLpredict(X, Y,  Z) # 1
 }
