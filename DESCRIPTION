@@ -15,7 +15,6 @@ RoxygenNote: 7.1.2
 Imports: 
     caret,
     class,
-    crayon,
     datasets,
     DMwR2,
     dplyr,
@@ -24,3 +23,7 @@ Imports:
     stats
 Depends: 
     R (>= 2.10)
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr
