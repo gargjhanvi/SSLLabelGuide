@@ -1,13 +1,40 @@
-# We will use cross validation technique to compare SVM and KNN on the labelled data.
+
+# We will use cross validation technique to compare Multiclass SVM, KNN and Multiclass logistic regression on the labelled data.
 
 # X - n1 * p matrix of labelled data points. Here the rows contains the n1 labelled data points. Each data point belongs to R^p
+# Xtilde -  n1 * p matrix of standarized X
 # Y - n1 vector of labels for data points in X
 # C - number of folds for k-fold cross-validation, default is 5.
 # K - number of classes
-
+# Z - m1 * p matrix of unlabeled data set
+# L - budget/ number of data points user can label
 
 ####################################################################
-#Standardize X
+#Standardize X function standardize X, i.e center and scale X
+#' standardizeX function centers and scales data
+#'
+#' @param X A matrix to center and scale
+#'
+#' @return A list of 3 elements, $tilde contains the center and scaled matrix, $weights returns  sqrt(X_j^{\top}X_j/n) after centering of X but before scaling and $means returns means of columns of X
+#' @export
+#'
+#'
+#' @examples
+#' X <- matrix(rnorm(20,2,1),5,4)
+#' standardizeX(X)
+#'#$ tilde
+#'#[,1]       [,2]       [,3]       [,4]
+#'#[1,]  1.6882137 -0.7593179 -0.6990462  1.8321703
+#'#[2,]  0.1689194  0.2360252 -0.1677231 -0.4757201
+#'#[3,] -0.8734264  0.1447277 -0.8047698 -1.1429930
+#'#[4,]  0.1694665 -1.2727583 -0.2684332  0.1025888
+#'#[5,] -1.1531731  1.6513233  1.9399723 -0.3160460
+
+#'#$weights
+#'#[1] 0.9099549 0.8239372 0.6899589 0.8253017
+
+#'#$means
+#'#[1] 2.446213 1.150378 2.978231 1.841284
 standardizeX <- function(X) {
   # Calculating number of rows and columns in X
   n <- nrow(X) # n is the number of rows in X
@@ -33,17 +60,35 @@ standardizeX <- function(X) {
   # Return:
   # Xtilde - centered and appropriately scaled X
 
-    return(list(Xtilde = Xtilde, weights = weights, Xmeans = Xmeans))
+  return(list(tilde = Xtilde, weights = weights, means = Xmeans))
 }
 
 
 
 ####################################################################
-# Algorithm function compares Multiclass SVM, KNN and Multiclass Logistic regression using cross-validation
-Algorithm <- function(X, Y, K = NULL) {
+# Algorithm function compares Multiclass SVM, KNN and Multiclass Logistic regression using cross-validation and returns error of each
+#' Compares Multiclass SVM, K nearest neighbor and Multiclass Logistic regression on the labelled data points using five fold cross validation
+#'
+#' @param Xtilde n * p centered and scaled data points
+#' @param Y A numeric n vector of labels of Xtilde
+#' @param K Number of classes, ( If K is NULL, it calculates K as maximum entry in Y)
+#'
+#' @return A list of three elements a list of three elements: $error_svm  returns five fold cross-validation error when Multiclass svm is used, $error_knn returns five fold cross-validation error when K-nearest neighbour is used with K = round(sqrt(N)) where N is the number of training data points $error_logistic  returns five fold cross-validation error when Multiclass logistic regression is used with default numIter = 50, eta = 0.1, lambda = 1
+#' @export
+#'
+#' @examples
+#' X <- rbind(matrix(rnorm(10,0,1),5,2),matrix(rnorm(10,1,2),5,2), matrix(rnorm(10,4,3),5,2))
+#' fold_ids <- sample(1:15)
+#' X <- X[fold_ids, ]
+#' Xtilde <- standardizeX(X)$tilde
+#' Y <- c(1,1,1,1,1,2,2,2,2,2,3,3,3,3,3)
+#' Y <- Y[fold_ids]
+#' out <- Algorithm(Xtilde,Y,3)
+#'
+Algorithm <- function(Xtilde, Y, K = NULL) {
   C <- 5
-
-
+  X <- Xtilde
+  Y <- as.numeric(Y)
   # n1 is the number of rows in X
   n1 <- nrow(X)
 
@@ -99,10 +144,12 @@ Algorithm <- function(X, Y, K = NULL) {
     A <- table(lstY[[i]], SVM_fitting)
     error_svm <- error_svm + sum(A) - sum(diag(A))
   }
+
   # error_logistic stores cross validation error when we use Multiclass SVM algorithm
   error_logistic = 0
   for (i in 1:C) {
-    error_logistic = error_logistic + LRMultiClass (lstdataX[[i]], lstdataY[[i]],lstX[[i]],lstY[[i]])$error_test
+
+    error_logistic = error_logistic + LRMultiClass(cbind(1,as.matrix(lstdataX[[i]])), (lstdataY[[i]]-1), cbind(1,as.matrix(lstX[[i]])),(lstY[[i]]-1))$error_test[51]
   }
 
   return(list(error_svm = error_svm, error_knn = error_knn, error_logistic = error_logistic))
@@ -110,8 +157,26 @@ Algorithm <- function(X, Y, K = NULL) {
 
 
 ##############################################################################################
-# Returns which algorithm among Multiclass SVM, KNN and Multiclass logistic  performs better on the labelled data set using cross validation technique
-ChooseAlgorithm <- function(X, Y, K = NULL) {
+#' Returns which algorithm among Multiclass SVM, KNN and Multiclass logistic  performs better on the labelled data set using cross validation technique
+
+#' @param Xtilde n * p Centered and scaled labelled data points
+#' @param Y A numeric n vector of labels of Xtilde
+#' @param K number of classes( If K is NULL, it calculates K as maximum entry in Y) )
+#'
+#' @return A string among c("KNN", "Logistic", "SVM") which tells us which algorithm performs better on the labelled data set
+#'
+#' @export
+#'
+#' @examples
+#'X <- rbind(matrix(rnorm(10,0,1),5,2),matrix(rnorm(10,1,2),5,2), matrix(rnorm(10,4,3),5,2))
+#' fold_ids <- sample(1:15)
+#' X <- X[fold_ids, ]
+#' Xtilde <- standardizeX(X)$tilde
+#' Y <- c(1,1,1,1,1,2,2,2,2,2,3,3,3,3,3)
+#' Y <- Y[fold_ids]
+#' out <- ChooseAlgorithm(Xtilde,Y,3)
+#' #"KNN"
+ChooseAlgorithm <- function(Xtilde, Y, K = NULL) {
   C <- 5
   Total_svm_error <- 0
   Total_KNN_error <- 0
@@ -120,7 +185,7 @@ ChooseAlgorithm <- function(X, Y, K = NULL) {
   # Comparing cross validation error
 
   for (i in 1:25) {
-    out <- Algorithm(X, Y,K)
+    out <- Algorithm(Xtilde, Y,K)
     Total_svm_error <- Total_svm_error + out$error_svm
     Total_KNN_error <- Total_KNN_error + out$error_knn
     Total_Logistic_error <- Total_Logistic_error + out$error_logistic
@@ -143,73 +208,80 @@ ChooseAlgorithm <- function(X, Y, K = NULL) {
 #####################################################################
 
 
-#' SSLconf function arranges the unlabeled data points based on the confidence of prediction
+#' SSLconf divides the unlabeled data into matrices "High", "Low", "Average" based on the confidence in predicting them.
 #'
-#' @param X n1 * p matrix of labelled data points. Here the rows contains the n1 labelled data points. Each data point belongs to R^p
-#' @param Y n1 vector of labels for data points in X
-#' @param Z m1*p matrix of Unlabeled data points
-#' @param K number of classes
-#' @return A list with five components, conf - A matrix with data points of Z arranged from high to low confidence of prediction, High - A matrix containing data points of Z that are predicted with high confidence, Low - A matrix containing data points of Z that are predicted with low confidence, Average - A matrix containing data points of Z that are predicted with moderate confidence, Remat - A matrix containing data points of Z that should possibly be relabeled
+#' @param X n * p matrix of labelled data points. Here the rows contains the n labelled data points. Each data point belongs to R^p
+#' @param Y numeric n vector of labels for data points in X
+#' @param Z m * p matrix of Unlabeled data points
+#' @param K number of classes(If K is null, It calculates K as the maximum entry in Y)
+#' @return A list with four elements, $High - A matrix containing data points of Z that are predicted with high confidence, $Low - A matrix containing data points of Z that are predicted with low confidence, $Average - A matrix containing data points of Z that are predicted with moderate confidence, $Remat - A matrix containing data points of Z that should possibly be relabeled
 #'
 #' @export
 #'
 #' @examples
-
+#' X <- rbind(matrix(rnorm(10,0,1),5,2),matrix(rnorm(10,1,2),5,2), matrix(rnorm(10,4,3),5,2))
+#' fold_ids <- sample(1:15)
+#' X <- X[fold_ids, ]
+#' Y <- c(1,1,1,1,1,2,2,2,2,2,3,3,3,3,3)
+#' Y <- Y[fold_ids]
+#' Z <- rbind(matrix(rnorm(80,0,1),40,2),matrix(rnorm(80,1,2),40,2), matrix(rnorm(80,4,3),40,2))
+#' Z <- Z[sample(1:120), ]
+#' out <- SSLconf(X, Y, Z,3)
+#'
 #'
 SSLconf <- function(X, Y, Z, K = NULL) {
-
-  out <-standardizeX(rbind(X,Z))
-  weights <- out$weights
-  means <- out$Xmeans
-  Xtilde <- X
-  Ztilde <- Z
-  X <- (Xtilde - matrix(means, byrow = T, nrow(X), ncol(X)))/matrix(weights, byrow = T, nrow(X), ncol(X))
-  Z <- (Ztilde - matrix(means, byrow = T, nrow(Z), ncol(Z)))/matrix(weights, byrow = T, nrow(Z), ncol(Z))
+  # Standardizing X and z
   n_train <- nrow(X)
   p <- ncol(X)
   n_test <- nrow(Z)
-  K_for_kNN <- round(sqrt(nrow(X)))
-  confidence_measure <- rep(0, n_test)
-  Relabel <- rep(0, n_test)
-  High = matrix(c(0,0,0,0),2,2)
+  out <- standardizeX(rbind(X,Z))
+  weights <- out$weights
+  means <- out$means
+  tilde <- out$tilde
+  Xtilde <- tilde[1:n_train, ]
+  Ztilde <- tilde[(n_train + 1):(n_train + n_test), ]
 
-  out <- ChooseAlgorithm(X, Y, K)
-  A <- Z
-  while(is.null(High) == F){
- # If Algorithm is KNN
-    if (out == "KNN"){
-    Probability <- stats::predict(caret::knn3(X, Y, k = K_for_kNN), A)
-    maximum <- apply(Probability, 1, max, na.rm = TRUE)
-    second_maximum <- apply(Probability, 1, function(row) max(row[-which.max(row)]))
-    Difference <- maximum - second_maximum
+  High <- matrix(c(0,0,0,0),2,2)
+  High_increase <- NULL
 
-    for (i in 1:nrow(A)) {
-      if (Difference[i] >= round(2 * K_for_kNN / 3) / K_for_kNN) {
-        confidence_measure[i] <- "High"
-      }
+  out1 <- ChooseAlgorithm(Xtilde, Y, K)
 
-      if (Difference[i] >= round(K_for_kNN / 3) / K_for_kNN & Difference[i] < round(2 * K_for_kNN / 3) / K_for_kNN) {
-        confidence_measure[i] <- "Average"
-      }
+  Z_modified <- Ztilde
+  X_modified <- Xtilde
+  Y_modified <- Y
 
-      if (Difference[i] < round(K_for_kNN / 3) / K_for_kNN) {
-        confidence_measure[i] <- "Low"
-      }
 
-      if (Difference[i] < 0.4) {
-        Relabel[i] <- 1
-      }
+  while(nrow(High) !=0 ){
+    K_for_kNN <- round(sqrt(nrow(X_modified)))
+    confidence_measure <- rep(0, nrow(Z_modified))
+    Relabel <- rep(0, nrow(Z_modified))
+
+    # If Algorithm is KNN
+    if (out1 == "KNN"){
+      Probability <- stats::predict(caret::knn3(X_modified,as.factor( Y_modified), k = K_for_kNN), Z_modified)
     }
-  }
- # If Algorithm is SVM
-  if (out == "SVM") {
-    SVM_model <- e1071::svm(Y ~ ., data = cbind(X, Y), type = "C", probability = TRUE)
-    SVM_fitting <- stats::predict(SVM_model, A, probability = T)
-    Probability <- attr(SVM_fitting, "probabilities")
+
+    # If Algorithm is SVM
+    if (out1 == "SVM") {
+      labels <- as.factor(Y_modified)
+      SVM_model <- e1071::svm(labels ~ ., data = cbind(X_modified, labels), type = "C", probability = TRUE)
+      SVM_fitting <- stats::predict(SVM_model, Z_modified, probability = T)
+      Probability <- attr(SVM_fitting, "probabilities")
+    }
+
+    # If Algorithm is Logistic
+    if (out1 == "Logistic") {
+      out2 <- LRMultiClass(cbind(1,as.matrix(X_modified)), (Y_modified-1), cbind(1,as.matrix(Z_modified)), rep(1,nrow(Z_modified)))
+      P <- exp(cbind(1,as.matrix(Z_modified)) %*% out2$beta)
+      cols <- colSums(t(P))
+      Probability <- P / cols
+    }
+
     maximum <- apply(Probability, 1, max, na.rm = TRUE)
     second_maximum <- apply(Probability, 1, function(row) max(row[-which.max(row)]))
     Difference <- maximum - second_maximum
-    for (i in 1:nrow(A)) {
+
+    for (i in 1:nrow(Z_modified)) {
       if (Difference[i] >= 0.70) {
         confidence_measure[i] <- "High"
       }
@@ -225,86 +297,62 @@ SSLconf <- function(X, Y, Z, K = NULL) {
         Relabel[i] <- 1
       }
     }
-  }
-# If Algorithm is Logistic
-  if (out == "Logistic") {
-    out1 <- LRMultiClass(X, Y, A, rep(1,nrow(A)))
-    P <- exp(A %*% out1$beta)
-    cols <- colSums(t(P))
-    Probability <- P / cols
-    maximum <- apply(Probability, 1, max, na.rm = TRUE)
-    second_maximum <- apply(Probability, 1, function(row) max(row[-which.max(row)]))
-    Difference <- maximum - second_maximum
-    for (i in 1:nrow(A)) {
-      if (Difference[i] >= 0.70) {
-        confidence_measure[i] <- "High"
-      }
+    #################
 
-      if (Difference[i] >= 0.30 & Difference[i] < 0.70) {
-        confidence_measure[i] <- "Average"
-      }
-
-      if (Difference[i] < 0.30) {
-        confidence_measure[i] <- "Low"
-      }
-      if (Difference[i] < 0.4) {
-        Relabel[i] <- 1
-      }
+    High <- as.matrix(Z_modified[confidence_measure =="High", ])
+    if(ncol(High) == 1){
+      High <- matrix(High, 1 , p,byrow=T)
     }
-  }
-################# High low Average relabel calculated
-  X <- rbind(X, A[confidence_measure == "High", ])
-  Y <- c(Y, max.col(Probability)[confidence_measure == "High"])
-  A <- A[confidence_measure !="High", ]
-  }
-################### Unstandardize X, A, Z
-  A <- A %*% matrix(weights, byrow = T, nrow(A), p) + matrix(means, byrow = T, nrow(A), p)
-  Z <- Z %*% matrix(weights, byrow = T, nrow(Z), p) + matrix(means, byrow = T, nrow(Z), p)
 
-##################
-  Remat <- A[Relabel == 1, ]
-  Average <- A[confidence_measure == "Average", ]
-  Low <- A[confidence_measure == "Low", ]
-  remove <- rbind(Average, Low)
-  index <- c()
-  for (i in 1: nrow(remove)){
-    index = append(index,  which(rowSums(abs(Z - matrix(remove[i] ,nrow(Z), ncol(Z),T)))==0))
-    }
-  High <- Z[-index, ]
+    High_increase <- rbind(High_increase, High)
+    Low <- Z_modified[confidence_measure =="Low", ]
+    Average <- Z_modified[confidence_measure =="Average", ]
+    Remat <- Z_modified[Relabel == 1, ]
+    X_modified <- as.matrix(rbind(X_modified, Z_modified[confidence_measure == "High", ]))
+    Y_modified <- c(Y_modified, max.col(Probability)[confidence_measure == "High"])
+    Z_modified <- as.matrix(Z_modified[confidence_measure !="High", ])
+
+  }
+  ###################
+
+  ### Unscaling  Low, Average, High, Remat
+  High <- High_increase * matrix(weights, byrow = T, nrow(High_increase), p) + matrix(means, byrow = T, nrow(High_increase), p)
+  Low <- Low * matrix(weights, byrow = T, nrow(Low), p) + matrix(means, byrow = T, nrow(Low), p)
+  Average <- Average * matrix(weights, byrow = T, nrow(Average), p) + matrix(means, byrow = T, nrow(Average), p)
+  Remat<- Remat * matrix(weights, byrow = T, nrow(Remat), p) + matrix(means, byrow = T, nrow(Remat), p)
 
   ############### We have High, Average, Low, Remat
   n_high <- nrow(High)
   n_Low <- nrow(Low)
   n_Average <- nrow(Average)
 
-  for (i in 1:ncol(Z)) {
-    # dev.new()
-    plot(rep(i, n_high), High[, i],
-         col = "green", main = "Confidence of Prediction",
-         ylab = "Value at that feature",
-         xlab = "Feature "
+  for (i in 1:p) {
+     plot( High[, i],rep(1.4, n_high), yaxt='n',
+          col = "green", pch = 17, main = paste("Confidence of Prediction Vs feature", i),
+          xlab = paste("Value at feature", i),
+          ylab = " "
     )
-    graphics::points(rep(i, n_Low), Low[, i], col = "red")
-    graphics::points(rep(i, n_Average), Average[, i], col = "yellow")
+    graphics::points (Low[, i],rep(1, n_Low), col = "red", pch = 16)
+    graphics::points( Average[, i],rep(1.2, n_Average), col = "blue", pch = 15)
     graphics::legend("topleft",
-           c("High", "Average", "Low"),
-           fill = c("green", "yellow", "red")
+                     c("High", "Average", "Low"),
+                     fill = c("green", "blue", "red")
     )
   }
 
-  for (i in 1:ncol(Z)) {
-    for (j in ncol(Z)) {
+
+  for (i in 1:p) {
+    for (j in 1:p) {
       if (j > i) {
-        # dev.new()
         plot(High[, i], High[, j],
-             col = "green", main = "Confidence of Prediction", ylab = j,
-             xlab = i
+             col = "green", main = "Confidence of Prediction", ylab = paste("Value at feature", j),
+             xlab = paste("Value at feature", i), pch = 17
         )
-        graphics::points(Low[, i], Low[, j], col = "red")
-        graphics::points(Average[, i], Average[, j], col = "yellow")
+        graphics::points(Low[, i], Low[, j], col = "red", pch = 16)
+        graphics::points(Average[, i], Average[, j], col = "blue", pch = 15)
         graphics::legend("topleft",
-               c("High", "Average", "Low"),
-               fill = c("green", "yellow", "red")
+                         c("High", "Average", "Low"),
+                         fill = c("green", "blue", "red")
         )
       }
     }
@@ -312,7 +360,7 @@ SSLconf <- function(X, Y, Z, K = NULL) {
 
   return(list( High = High, Low = Low, Average = Average, Remat = Remat))
 }
-
+####################################################################
 # Function SSLBudget
 
 #' SSLBudget outputs what unlabeled data points should be labelled based on the budget
@@ -330,9 +378,11 @@ SSLconf <- function(X, Y, Z, K = NULL) {
 
 
 SSLBudget <- function(X, Y, L, Z, K = NULL) {
+  n <- nrow(Z)
+  p <- ncol(Z)
   out <- SSLconf(X, Y, Z, K)
   Remat <- out$Remat
-  Cluster_labels <- MyKmeans(Remat, L)
+  Cluster_labels <- MyKmeans(as.matrix(Remat), L)
   Clusters <- vector(mode = "list", length = L)
   for (i in 1:L) {
     Clusters[[i]] <- as.matrix(Remat[Cluster_labels == i, ])
@@ -342,9 +392,42 @@ SSLBudget <- function(X, Y, L, Z, K = NULL) {
     ToLabel[i, ] <- Clusters[[i]][sample(1:nrow(Clusters[[i]]), 1), ]
   }
 
+  for (i in 1:p) {
+    # dev.new()
+    plot( Z[, i],rep(1, n ), yaxt='n',
+          col = "black", pch = 16, main = paste("Points that should be relabeled, only showing feature", i),
+          xlab = paste("Value at feature", i),
+          ylab = " "
+    )
+    graphics::points (ToLabel[, i],rep(1, L), col = "red", pch = 16)
+    graphics::legend("topleft",
+                     c("To Label"),
+                     fill = c("red")
+    )
+  }
+
+
+  for (i in 1:p) {
+    for (j in 1:p) {
+      if (j > i) {
+        # dev.new()
+        plot(Z[, i], Z[, j],
+             col = "black", main = paste(c("Points that should be relabeled, only showing feature",i,",",j)), ylab = paste("Value at feature", j),
+             xlab = paste("Value at feature", i), pch = 16
+        )
+        graphics::points(ToLabel[, i], ToLabel[, j], col = "red", pch = 16)
+
+        graphics::legend("topleft",
+                         c("To Label"),
+                         fill = c("red")
+        )
+      }
+    }
+  }
+
   return(ToLabel)
 }
-
+##################################################################
 
 #' SSLpredict predicts the labels for unlabeled data
 #'
@@ -358,69 +441,147 @@ SSLBudget <- function(X, Y, L, Z, K = NULL) {
 #' @export
 #'
 #' @examples
-#' #'
-#' data(iris)
-#' data1 = iris[sample(1:150), ]
-#' X = data1[1:25,1:4]
-#' Y = data1[1:25,5]
-#' Z = data1[26:150, 1:4]
-#' SSLpredict(X, Y,  Z) # 1
+
 
 SSLpredict <- function(X, Y, Z, K = NULL) {
-  out <- ChooseAlgorithm(X, Y, K)
-  if (out == "KNN") {
-    kNN_fitting <- class::knn(X, Z, Y, round(sqrt(nrow(X))))
-    return(kNN_fitting)
+  p <- ncol(X)
+  out <- standardizeX(rbind(X,Z))
+  Xtilde <- out$tilde[1:nrow(X), ]
+  Ztilde <- out$tilde[(nrow(X)+1):(nrow(X)+nrow(Z)), ]
+  out1 <- ChooseAlgorithm(Xtilde, Y, K)
+  Ytilde <- as.numeric(Y)
+  High = matrix(c(0,0,0,0),2,2)
+  High_increase = NULL
+
+  if (out1 == "KNN") {
+    while(nrow(High) !=0){
+      K_for_kNN <- round(sqrt(Xtilde))
+      Probability <- stats::predict(caret::knn3(Xtilde, as.factor(Ytilde), k = K_for_kNN), Ztilde)
+      maximum <- apply(Probability, 1, max, na.rm = TRUE)
+      second_maximum <- apply(Probability, 1, function(row) max(row[-which.max(row)]))
+      Difference <- maximum - second_maximum
+      confidence_measure <- rep(0,nrow(Ztilde))
+      for (i in 1:nrow(Ztilde)) {
+        if (Difference[i] >= 0.70) {
+          confidence_measure[i] <- "High"
+        }
+
+        if (Difference[i] >= 0.30 & Difference[i] < 0.70) {
+          confidence_measure[i] <- "Average"
+        }
+
+        if (Difference[i] < 0.30) {
+          confidence_measure[i] <- "Low"
+        }
+      }
+      #################
+
+      High <- Ztilde[confidence_measure =="High", ]
+      kNN_fitting <- class::knn(Xtilde,High, as.factor(Ytilde), round(sqrt(nrow(Xtilde))))
+      High_increase <- rbind(High_increase, cbind(High,kNN_fitting))
+      Xtilde <- rbind(Xtilde, Ztilde[confidence_measure == "High", ])
+      Ytilde <- c(Ytilde, max.col(Probability)[confidence_measure == "High"])
+      Ztilde <- Ztilde[confidence_measure !="High", ]
+    }
+
+    kNN_fitting <- class::knn(Xtilde,Ztilde,as.factor(Ytilde), round(sqrt(nrow(Xtilde))))
+    High_increase <- rbind(High_increase, cbind(Ztilde,kNN_fitting))
+    High_increase[,1:p] <-High_increase[,1:p] * matrix(out$weights, byrow = T, nrow(High_increase), p) + matrix(out$means, byrow = T, nrow(High_increase), p)
+    return(High_increase)
   }
-  if (out == "SVM") {
-    labels <- as.factor(Y)
-    training_data <- cbind(X, labels)
-    SVM_model <- e1071::svm(labels ~ ., data = training_data, type = "C")
-    SVM_fitting <- stats::predict(SVM_model, Z)
-    return(SVM_fitting)
+
+  if (out1 == "SVM") {
+
+    while(nrow(High) !=0){
+      labels <- as.factor(Ytilde)
+      SVM_model <- e1071::svm(labels ~ ., data = cbind(Xtilde, labels), type = "C", probability = TRUE)
+      SVM_fitting <- stats::predict(SVM_model, Ztilde, probability = T)
+      Probability <- attr(SVM_fitting, "probabilities")
+      maximum <- apply(Probability, 1, max, na.rm = TRUE)
+      second_maximum <- apply(Probability, 1, function(row) max(row[-which.max(row)]))
+      Difference <- maximum - second_maximum
+      confidence_measure <- rep(0,nrow(Ztilde))
+      for (i in 1:nrow(Ztilde)) {
+        if (Difference[i] >= 0.70) {
+          confidence_measure[i] <- "High"
+        }
+
+        if (Difference[i] >= 0.30 & Difference[i] < 0.70) {
+          confidence_measure[i] <- "Average"
+        }
+
+        if (Difference[i] < 0.30) {
+          confidence_measure[i] <- "Low"
+        }
+      }
+      #################
+
+      High <- Ztilde[confidence_measure =="High", ]
+      labels <- as.factor(Ytilde)
+      SVM_model <- e1071::svm(labels ~ ., data = cbind(Xtilde, labels), type = "C")
+      SVM_fitting <- stats::predict(SVM_model, High)
+      High_increase <- rbind(High_increase, cbind(High,SVM_fitting))
+      Xtilde <- rbind(Xtilde, High)
+      Ytilde <- c(Ytilde, max.col(Probability)[confidence_measure == "High"])
+      Ztilde <- Ztilde[confidence_measure !="High", ]
+    }
+    labels <- as.factor(Ytilde)
+    SVM_model <- e1071::svm(labels ~ ., data = cbind(Xtilde, labels), type = "C")
+    SVM_fitting <- stats::predict(SVM_model, Ztilde)
+    High_increase <- rbind(High_increase, cbind(Ztilde,SVM_fitting))
+    High_increase[,1:p] <-High_increase[,1:p] * matrix(out$weights, byrow = T, nrow(High_increase), p) + matrix(out$means, byrow = T, nrow(High_increase), p)
+    return(High_increase)
   }
-  if (out == "Logistic") {
-    nz <- nrow(Z)
-    out1 <- LRMultiClass(X, Y, Z, rep(1,nz))
-    P <- exp(Z %*% out1$beta)
+
+  if (out1 == "Logistic") {
+
+    while(nrow(High) !=0){
+      out2 <- LRMultiClass(cbind(1,as.matrix(Xtilde)), (Ytilde-1), cbind(1,as.matrix(Ztilde)), rep(1,nrow(Ztilde)))
+      P <- exp(cbind(1,as.matrix(Ztilde)) %*% out2$beta)
+      cols <- colSums(t(P))
+      Probability <- P / cols
+      maximum <- apply(Probability, 1, max, na.rm = TRUE)
+      second_maximum <- apply(Probability, 1, function(row) max(row[-which.max(row)]))
+      Difference <- maximum - second_maximum
+      confidence_measure <- rep(0,nrow(Ztilde))
+      for (i in 1:nrow(Ztilde)) {
+        if (Difference[i] >= 0.70) {
+          confidence_measure[i] <- "High"
+        }
+
+        if (Difference[i] >= 0.30 & Difference[i] < 0.70) {
+          confidence_measure[i] <- "Average"
+        }
+
+        if (Difference[i] < 0.30) {
+          confidence_measure[i] <- "Low"
+        }
+      }
+      #################
+
+      High <- Ztilde[confidence_measure =="High", ]
+      P <- exp(cbind(1,as.matrix(High)) %*% out2$beta)
+      rsum <- rowSums(P)
+      rsum_mat <- matrix(rsum, nrow(P), ncol(P))
+      Probability <- P/rsum_mat
+      maximum <- max.col(Probability)
+      High_increase <- rbind(High_increase, cbind(High,maximum))
+      Xtilde <- rbind(Xtilde, Ztilde[confidence_measure == "High", ])
+      Ytilde <- c(Ytilde, max.col(Probability)[confidence_measure == "High"])
+      Ztilde <- Ztilde[confidence_measure !="High", ]
+    }
+
+    P <- exp(cbind(1,as.matrix(Ztilde)) %*% out2$beta)
     rsum <- rowSums(P)
-    rsum_mat <- matrix(rowsum, nrow(P), ncol(P))
-    P <- P/rsum_mat
+    rsum_mat <- matrix(rsum, nrow(P), ncol(P))
+    Probability <- P/rsum_mat
     maximum <- max.col(P)
-    return(maximum)
+    High_increase <- rbind(High_increase, cbind(Ztilde,maximum))
+    High_increase[,1:p] <-High_increase[,1:p] * matrix(out$weights, byrow = T, nrow(High_increase), p) + matrix(out$means, byrow = T, nrow(High_increase), p)
+    return(High_increase)
+
   }
 
 }
 
 
-
-#' Comparison error compares the error of unlabeled data points before labeling L points and after labeling L points that were given by SSLBudget function
-#'
-#' @param X n1 * p matrix of labelled data points. Here the rows contains the n1 labelled data points. Each data point belongs to R^p
-#' @param Y n1 vector of labels for data points in X
-#' @param Z m1*p matrix of Unlabeled data points
-#' @param W m1 vector of true labels of data points in Z
-#' @param new_data L*(p+1) matrix of data points that were given by SSLBudget appended with their true labels
-#' @param K number of classes
-#'
-#' @return A list with two components, error_before - hamming distance between true labels and predicted labels before user labels L data points suggested by SSLBudget, error_after - hamming distance between true labels and predicted labels after user labels L data points suggested by SSLBudget
-#'
-#' @export
-#'
-#'
-Comparison_error <- function(X, Y, Z, W, new_data,  K = NULL) {
-  p = ncol(new_data) - 1
-  for (i in 1:nrow(new_data)) {
-    A <- rowsum(abs(Z - matrix(new_data[i, 1:p], nrow = nrow(Z))))
-    index <- which(A == 0)
-    Z <- Z[-index, ]
-  }
-  out <- SSLpredict(X, Y, Z, K)
-
-  X1 <- rbind(X, new_data[, 1:p])
-  Y1 <- rbind(Y, new_data[, (p+1)])
-  out1 <- SSLpredict(X1, Y1, Z, K)
-  error1 <- table(W, out)
-  error2 <- table(W, out1)
-  return(list(error_before = error1, error_after = error2))
-}
