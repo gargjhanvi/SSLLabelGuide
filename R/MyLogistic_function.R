@@ -16,6 +16,22 @@
 # error_train - (numIter + 1) length vector of training error % at each iteration (+ starting value)
 # error_test - (numIter + 1) length vector of testing error % at each iteration (+ starting value)
 # objective - (numIter + 1) length vector of objective values of the function that we are minimizing at each iteration (+ starting value)
+
+#' Title
+#'
+#' @param X
+#' @param y
+#' @param Xt
+#' @param yt
+#' @param numIter
+#' @param eta
+#' @param lambda
+#' @param beta_init
+#'
+#' @return
+#' @export
+#'
+#' @examples
 LRMultiClass <- function(X, y, Xt, yt, numIter = 50, eta = 0.1, lambda = 1, beta_init = NULL) {
   ## Check the supplied parameters as described. You can assume that X, Xt are matrices; y, yt are vectors; and numIter, eta, lambda are scalars. You can assume that beta_init is either NULL (default) or a matrix.
   ###################################
@@ -124,8 +140,8 @@ LRMultiClass <- function(X, y, Xt, yt, numIter = 50, eta = 0.1, lambda = 1, beta
   # calculating the classification output for testing data
   y1t <- max.col(Pt, ties.method = "first") - 1
   # calculating the training error and testing error in percentage and storing in error_train and error_test respectively for this iteration
-  error_train[iter + 1] <- sum(y != y1) / length(y) * 100
-  error_test[iter + 1] <- sum(yt != y1t) / length(yt) * 100
+  error_train[iter + 1] <- sum(y != y1)
+  error_test[iter + 1] <- sum(yt != y1t)
 
   ## Newton's method cycle - implement the update EXACTLy numIter iterations
   ##########################################################################
@@ -181,8 +197,8 @@ LRMultiClass <- function(X, y, Xt, yt, numIter = 50, eta = 0.1, lambda = 1, beta
     y1t <- max.col(Pt, ties.method = "first") - 1
 
     # calculating the training error and testing error in percentage and storing in error_train and error_test respectively for this iteration
-    error_train[iter + 1] <- sum(y != y1) / length(y) * 100
-    error_test[iter + 1] <- sum(yt != y1t) / length(yt) * 100
+    error_train[iter + 1] <- sum(y != y1)
+    error_test[iter + 1] <- sum(yt != y1t)
 
 
 
