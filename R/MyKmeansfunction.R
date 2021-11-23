@@ -1,4 +1,15 @@
 # Function that implements K-means algorithm. The default number of maximal iterations is 100.
+#' Title
+#'
+#' @param X
+#' @param K
+#' @param M
+#' @param numIter
+#'
+#' @return
+#' @export
+#'
+#' @examples
 MyKmeans <- function(X, K, M = NULL, numIter = 100) {
 
   # Check whether M is NULL or not. If NULL, initialize based on K randomly selected points from X. If not NULL, check for compatibility with X dimensions.
