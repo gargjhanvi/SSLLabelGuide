@@ -60,7 +60,7 @@
 
 #'colXt1 <- rep(1, nrow(Xt))
 #'Xt <- cbind(colXt1, Xt)
-#'output <- LRMultiClass(X, Y, Xt, Yt, eta = 0.01, numIter = 100, lambda = 1, beta_init = NULL)
+#'output <- LRMultiClass(X, Y, Xt, Yt)
 
 
 
