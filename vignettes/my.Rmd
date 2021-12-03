@@ -1,0 +1,211 @@
+---
+title: "Recommends data points that should be in training set based on budget constraints in a classification problem"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{This is the title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+**Jhanvi Garg**
+---
+**11/21/2021**
+---
+
+```{r setup}
+library(SSLLabelGuide)
+```
+## Overview
+
+In this vignette, we show how SSLLabelGuide can be used to compare various semi supervised learning algorithms, predict labels of the unlabeled data points, determine the confidence of labeling unlabeled data points and determine the data points user should label ( among the unlabeled data points ) based on budget constraints(i.e user can label L more data points for us) to increase the overall accuracy of predicting labels of remaining points  .
+
+
+
+## Functionality
+
+We will explain different functions in the package with the help of iris data set.
+
+### **1) standardizeX**
+
+We want all the features to be centered and scaled, i.e they have mean 0 and standard deviation 1. It is important when we have features that have different units. It avoids some features creating a bias just because they take values in higher range. The function **standardizeX** inputs a matrix **X** and returns a list of three elements:
+
+*  **$tilde** return the center and scaled matrix 
+
+*  **$weights** returns  $sqrt(X_j^{\top}X_j/n)$ after centering of X but before scaling 
+
+*  **$means** returns means of columns of X
+
+```{r}
+ data <- iris[ , 1:4]
+ out <- standardizeX(data)
+ head(out$tilde,6)
+ out$means
+ out$weights
+
+```
+
+### **2) Algorithm **
+The Algorithm function uses five fold cross validation to compare Multiclass SVM, K nearest neighbor and Multiclass Logistic regression on the labelled data points. The function **Algorithm** inputs a centered and scaled n * p matrix of n  data points **Xtilde**, A numeric n  vector **Y** of corresponding labels of data points in X and the number of class **K** (If K is NULL, it calculates the number of classes based on Y) and outputs a list of three elements:
+
+* **$error_svm**  returns five fold cross-validation error when Multiclass svm is used
+
+* **$error_knn** returns five fold cross-validation error when K-nearest neighbour is used with K = round(sqrt(N)) where N is the number of training data points
+
+* **$error_logistic**  returns five fold cross-validation error when Multiclass logistic regression is used with default numIter = 50, eta = 0.1, lambda = 1
+
+```{r}
+ data <- iris[sample(1:150), ]
+ scaledX <- standardizeX(data[, 1:4])
+ Xtilde <- scaledX$tilde[1:25, ]
+ Y <- data[1:25, 5]
+Algorithm(Xtilde, Y, 3)
+
+
+```
+### **3) ChooseAlgorithm ** 
+The ChooseAlgorithm function uses the output of the Algorithm function and choose the algorithm among multiclass SVM, multiclass logistic and KNN which has the least cross validation error on the labelled data set. If the two algorithms have the same cross validation error, it either chooses KNN or multiclass logistic regression. The function **ChooseAlgorithm** inputs a centered and scaled n * p  matrix of n  data points **Xtilde**, A numeric n vector **Y** of corresponding labels of data points in X and the number of class **K** (If K is NULL, it calculates the number of classes based on Y) and outputs a string among one of the three "KNN","Logistic","SVM" depending on which algorithm performs better.
+
+```{r}
+ data <- iris[sample(1:150), ]
+ scaledX <- standardizeX(data[, 1:4])
+ Xtilde <- scaledX$tilde[1:25, ]
+ Y <- data[1:25, 5]
+ChooseAlgorithm(Xtilde, Y, 3)
+
+
+```
+### **4) SSLconf **
+The SSLconf function divides the unlabeled data into matrices "High", "Low", "Average" based on the confidence in predicting them. It inputs a n * p matrix of n data points **X**, a numeric n vector **Y** of labels of data points in X and a m * p matrix of m unlabeled  data points Z.
+
+
+* **Step1** It centers and scales the matrices X and Z  to get Xtilde and Ztilde.
+```{r}
+ data <- iris[sample(1:150), ]
+ 
+ X <- data[1:25, 1:4]
+ Z <- data[26:150,1:4]
+ out <- standardizeX(rbind(X,Z))
+ Xtilde <- out$tilde[1:25, ]
+ Ztilde <- out$tilde[26:150, ]
+ head(Xtilde,5)
+ head(Ztilde,5)
+```
+
+* **Step2** We use ChooseAlgorithm function to choose an algorithm among multiclass SVM, multiclass logistic regression and K nearest neighbor.
+
+```{r}
+Y <- data[1:25,5]
+Y <- as.numeric(Y)
+ChooseAlgorithm(Xtilde, Y, 3)
+```
+
+* **Step3** Based on the output of step 2, we calculate probability of the unlabeled data points in the class i, where $1 \le i \le K$. In the above example, if  the algorithm chosen is "Logistic", we calculate the probability matrix as follows:
+```{r}
+out2 <- LRMultiClass(X = cbind(1,as.matrix(Xtilde)),y = (Y-1), Xt = cbind(1,as.matrix(Ztilde)),yt =  rep(1,nrow(Ztilde)))
+P <- exp(cbind(1,as.matrix(Ztilde)) %*% out2$beta)
+cols <- colSums(t(P))
+Probability <- P / cols
+head(Probability, 5)
+```
+
+
+* **Step4** For each unlabeled data point $x_{i}$,  where $1 \le i \le m$, we calculate the **Difference_{i}** to be the difference between the probability of $x_{i}$ being in the predicted class than any other class. We calculate it as follows:
+
+
+```{r}
+maximum <- apply(Probability, 1, max, na.rm = TRUE)
+second_maximum <- apply(Probability, 1, function(row) max(row[-which.max(row)]))
+Difference <- maximum - second_maximum
+head(Difference,5)
+```
+
+* **Step5** For each unlabeled data point $x_{i}$,  where $1 \le i \le m$, if **Difference[i]** $\ge0.7$, we say it is predicted with high confidence, if **Difference[i] < 0.7** but $\ge0.3$, we say it is predicted with moderate confidence and if **Difference[i]< 0.3**, we say it is predicted with low confidence. We get three matrices **"High", "Low" and "Average"** containing unlabeled data points predicted with high, low and moderate confidence respectively.  We add the points predicted with High confidence and their predicted labels to the training data and repeat the steps until we get no points with high confidence. After that We define **Remat** to be a matrix containing all those unlabeled data points whose **Difference[i]** is still **< 0.4**. We will use the matrix Remat to recommend the points user should label based on budget constraint.   We also plot graphs showing unlabeled data points predicted with high, moderate and low confidence and data points in Remat.
+
+
+* It returns a list with four elements, 
+* $High - A matrix containing data points of Z that are predicted with high confidence
+
+* $Low - A matrix containing data points of Z that are predicted with low confidence 
+
+* $Average - A matrix containing data points of Z that are predicted with moderate confidence
+
+* $Remat - A matrix containing data points of Z that should possibly be relabeled
+
+## Code
+
+```{r, fig.width = 6, fig.height = 10}
+old.par <- par(mfrow = c(2,1))
+out <- SSLconf(X, Y, Z, 3)
+
+head(out$High,5)
+head(out$Low,5)
+head(out$Average,5)
+head(out$Remat,5)
+
+
+
+
+
+```
+
+
+
+### **4) SSLBudget **
+The SSLBudget function inputs a n * p matrix of n data points **X**, a numeric n vector **Y** of labels of data points in X, a m * p matrix of m unlabeled  data points Z and a number L of data points user can label (i.e the budget) for us. This function uses the output of SSLconf function. 
+ 
+* **Step1** We use Kmeans to cluster the data points in Remat into L clusters.
+```{r}
+L <-  5
+Cluster_labels <- MyKmeans(as.matrix(out$Remat), L)
+
+
+```
+
+* **Step2** We sample one point from each of L clusters and return the L sampled points (one from each cluster)
+```{r}
+Clusters <- vector(mode = "list", length = L)
+  for (i in 1:L) {
+    Clusters[[i]] <- as.matrix(out$Remat[Cluster_labels == i, ])
+  }
+  ToLabel <- matrix(0, L, ncol(Z))
+  for (i in 1:L) {
+    ToLabel[i, ] <- Clusters[[i]][sample(1:nrow(Clusters[[i]]), 1), ]
+  }
+
+```
+
+* We return a L * p matrix "ToLabel" containing the L points user should label for us. We also plot the data points in Tolabel and data points in Z in the same plot with different colors to pictorially represent position of points that user should Label (among unlabeled data points) relative to other unlabeled data points.
+
+
+```{r, fig.width = 6, fig.height = 10}
+old.par <- par(mfrow = c(2,1))
+SSLBudget(X, Y, 5 , Z, 3)
+
+```
+
+### **5) SSLpredict **
+* **Step1** It first uses the function ChooseAlgorithm to choose an algorithm among Multiclass SVM, Multiclass logistic regression and K- nearest neighbour.
+
+* **Step2** Using the algorithm we get in Step1,  It  predicts the labels of the unlabeled data points predicted with High confidence
+
+* **Step3** It adds those unlabeled data points predicted with High confidence and their labels to the training data set.
+
+* **Step4** It repeats the step1 and step2 until there is no more unlabeled data points that can be predicted with high confidence
+
+* **Step5** It finally predicts the labels of remaining unlabeled data points. 
+
+* In all the steps, we use the algorithm we obtain in step 1
+ 
+```{r}
+out<-SSLpredict(X, Y, Z, 3)
+head(out,5)
+```
+
+
