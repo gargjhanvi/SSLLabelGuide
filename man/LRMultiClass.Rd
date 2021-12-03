@@ -4,16 +4,7 @@
 \alias{LRMultiClass}
 \title{Title}
 \usage{
-LRMultiClass(
-  X,
-  y,
-  Xt,
-  yt,
-  numIter = 50,
-  eta = 0.1,
-  lambda = 1,
-  beta_init = NULL
-)
+LRMultiClass(X, y, Xt, yt)
 }
 \arguments{
 \item{X}{n x p training data, 1st column should be 1s to account for intercept}
@@ -23,14 +14,6 @@ LRMultiClass(
 \item{Xt}{ntest x p testing data, 1st column should be 1s to account for intercept}
 
 \item{yt}{a vector of size ntest of test class labels, from 0 to K-1}
-
-\item{numIter}{number of FIXED iterations of the algorithm, default value is 50}
-
-\item{eta}{learning rate, default value is 0.1}
-
-\item{lambda}{ridge parameter, default value is 0.1}
-
-\item{beta_init}{(optional) initial starting values of beta for the algorithm, should be p x K matrix}
 }
 \value{
 A list of two elements,
@@ -69,5 +52,5 @@ colX1 <- rep(1, nrow(X))
 X <- cbind(colX1, X)
 colXt1 <- rep(1, nrow(Xt))
 Xt <- cbind(colXt1, Xt)
-output <- LRMultiClass(X, Y, Xt, Yt, eta = 0.01, numIter = 100, lambda = 1, beta_init = NULL)
+output <- LRMultiClass(X, Y, Xt, Yt)
 }
