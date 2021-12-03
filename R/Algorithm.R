@@ -10,12 +10,15 @@
 # L - budget/ number of data points user can label
 
 ####################################################################
-#Standardize X function standardize X, i.e center and scale X
+# standardizeX function standardize X, i.e center and scale X
 #' standardizeX function centers and scales data
 #'
 #' @param X A matrix to center and scale
 #'
-#' @return A list of 3 elements, $tilde contains the center and scaled matrix, $weights returns  sqrt(X_j^{\top}X_j/n) after centering of X but before scaling and $means returns means of columns of X
+#' @return A list of 3 elements,
+#' \item{tilde}{ contains the center and scaled matrix}
+#' \item{weights}{ return weights after centering of X but before scaling}
+#' \item{means}{ returns means of columns of X}
 #' @export
 #'
 #'
@@ -73,7 +76,10 @@ standardizeX <- function(X) {
 #' @param Y A numeric n vector of labels of Xtilde
 #' @param K Number of classes, ( If K is NULL, it calculates K as maximum entry in Y)
 #'
-#' @return A list of three elements a list of three elements: $error_svm  returns five fold cross-validation error when Multiclass svm is used, $error_knn returns five fold cross-validation error when K-nearest neighbour is used with K = round(sqrt(N)) where N is the number of training data points $error_logistic  returns five fold cross-validation error when Multiclass logistic regression is used with default numIter = 50, eta = 0.1, lambda = 1
+#' @return A list of three elements a list of three elements:
+#' \item{error_svm}{  returns five fold cross-validation error when Multiclass svm is used}
+#' \item{error_knn}{ returns five fold cross-validation error when K-nearest neighbor is used with K = round(sqrt(N)) where N is the number of training data points}
+#' \item{error_logistic}{  returns five fold cross-validation error when Multiclass logistic regression is used with default numIter = 50, eta = 0.1, lambda = 1}
 #' @export
 #'
 #' @examples
@@ -159,10 +165,7 @@ Algorithm <- function(Xtilde, Y, K = NULL) {
 ##############################################################################################
 #' Returns which algorithm among Multiclass SVM, KNN and Multiclass logistic  performs better on the labelled data set using cross validation technique
 
-#' @param Xtilde n * p Centered and scaled labelled data points
-#' @param Y A numeric n vector of labels of Xtilde
-#' @param K number of classes( If K is NULL, it calculates K as maximum entry in Y) )
-#'
+#' @inheritParams Algorithm
 #' @return A string among c("KNN", "Logistic", "SVM") which tells us which algorithm performs better on the labelled data set
 #'
 #' @export
@@ -211,10 +214,14 @@ ChooseAlgorithm <- function(Xtilde, Y, K = NULL) {
 #' SSLconf divides the unlabeled data into matrices "High", "Low", "Average" based on the confidence in predicting them.
 #'
 #' @param X n * p matrix of labelled data points. Here the rows contains the n labelled data points. Each data point belongs to R^p
-#' @param Y numeric n vector of labels for data points in X
 #' @param Z m * p matrix of Unlabeled data points
-#' @param K number of classes(If K is null, It calculates K as the maximum entry in Y)
-#' @return A list with four elements, $High - A matrix containing data points of Z that are predicted with high confidence, $Low - A matrix containing data points of Z that are predicted with low confidence, $Average - A matrix containing data points of Z that are predicted with moderate confidence, $Remat - A matrix containing data points of Z that should possibly be relabeled
+#' @param Plots Takes argument TRUE or FALSE, depending on whether  the function should output plots. Default is TRUE
+#' @inheritParams Algorithm
+#' @return A list with four elements,
+#' \item{High}{A matrix containing data points of Z that are predicted with high confidence}
+#' \item{Low}{A matrix containing data points of Z that are predicted with low confidence}
+#' \item{Average}{A matrix containing data points of Z that are predicted with moderate confidence}
+#' \item{Remat}{A matrix containing data points of Z that should possibly be relabeled}
 #'
 #' @export
 #'
@@ -229,7 +236,7 @@ ChooseAlgorithm <- function(Xtilde, Y, K = NULL) {
 #' out <- SSLconf(X, Y, Z,3)
 #'
 #'
-SSLconf <- function(X, Y, Z, K = NULL) {
+SSLconf <- function(X, Y, Z, K = NULL, Plots = T) {
   # Standardizing X and z
   n_train <- nrow(X)
   p <- ncol(X)
@@ -325,8 +332,10 @@ SSLconf <- function(X, Y, Z, K = NULL) {
   n_high <- nrow(High)
   n_Low <- nrow(Low)
   n_Average <- nrow(Average)
-
+  #grDevices::pdf("PLot1.pdf")
+  if (Plots){
   for (i in 1:p) {
+
      plot( High[, i],rep(1.4, n_high), yaxt='n',
           col = "green", pch = 17, main = paste("Confidence of Prediction Vs feature", i),
           xlab = paste("Value at feature", i),
@@ -338,12 +347,14 @@ SSLconf <- function(X, Y, Z, K = NULL) {
                      c("High", "Average", "Low"),
                      fill = c("green", "blue", "red")
     )
+
   }
 
-
+  #grDevices::pdf("PLot2.pdf")
   for (i in 1:p) {
     for (j in 1:p) {
       if (j > i) {
+
         plot(High[, i], High[, j],
              col = "green", main = "Confidence of Prediction", ylab = paste("Value at feature", j),
              xlab = paste("Value at feature", i), pch = 17
@@ -354,10 +365,11 @@ SSLconf <- function(X, Y, Z, K = NULL) {
                          c("High", "Average", "Low"),
                          fill = c("green", "blue", "red")
         )
+
       }
     }
   }
-
+}
   return(list( High = High, Low = Low, Average = Average, Remat = Remat))
 }
 ####################################################################
@@ -365,22 +377,26 @@ SSLconf <- function(X, Y, Z, K = NULL) {
 
 #' SSLBudget outputs what unlabeled data points should be labelled based on the budget
 #'
-#' @param X n1 * p matrix of labelled data points. Here the rows contains the n1 labelled data points. Each data point belongs to R^p
-#' @param Y n1 vector of labels for data points in X
 #' @param L positive integer - number of data points that user can label
-#' @param Z m1*p matrix of Unlabeled data points
-#' @param K number of classes
-#'
+#' @inheritParams SSLconf
 #' @return Tolabel - A L*p matrix of data points from Z that user should label
 #' @export
 #'
 #' @examples
+#' X <- rbind(matrix(rnorm(10,0,1),5,2),matrix(rnorm(10,1,2),5,2), matrix(rnorm(10,4,3),5,2))
+#' fold_ids <- sample(1:15)
+#' X <- X[fold_ids, ]
+#' Y <- c(1,1,1,1,1,2,2,2,2,2,3,3,3,3,3)
+#' Y <- Y[fold_ids]
+#' Z <- rbind(matrix(rnorm(80,0,1),40,2),matrix(rnorm(80,1,2),40,2), matrix(rnorm(80,4,3),40,2))
+#' Z <- Z[sample(1:120), ]
+#' out <- SSLBudget(X, Y,5, Z,3)
 
 
 SSLBudget <- function(X, Y, L, Z, K = NULL) {
   n <- nrow(Z)
   p <- ncol(Z)
-  out <- SSLconf(X, Y, Z, K)
+  out <- SSLconf(X, Y, Z, K, Plots = F)
   Remat <- out$Remat
   Cluster_labels <- MyKmeans(as.matrix(Remat), L)
   Clusters <- vector(mode = "list", length = L)
@@ -392,19 +408,18 @@ SSLBudget <- function(X, Y, L, Z, K = NULL) {
     ToLabel[i, ] <- Clusters[[i]][sample(1:nrow(Clusters[[i]]), 1), ]
   }
 
-  for (i in 1:p) {
-    # dev.new()
-    plot( Z[, i],rep(1, n ), yaxt='n',
-          col = "black", pch = 16, main = paste("Points that should be relabeled, only showing feature", i),
-          xlab = paste("Value at feature", i),
-          ylab = " "
-    )
-    graphics::points (ToLabel[, i],rep(1, L), col = "red", pch = 16)
-    graphics::legend("topleft",
-                     c("To Label"),
-                     fill = c("red")
-    )
-  }
+for (i in 1:p) {
+  plot( Z[, i],rep(1, n ), yaxt='n',
+        col = "black", pch = 16, main = paste("Points that should be relabeled, only showing feature", i),
+        xlab = paste("Value at feature", i),
+        ylab = " "
+  )
+  graphics::points (ToLabel[, i],rep(1, L), col = "red", pch = 16)
+  graphics::legend("topleft",
+                   c("To Label"),
+                   fill = c("red")
+  )
+}
 
 
   for (i in 1:p) {
@@ -430,17 +445,20 @@ SSLBudget <- function(X, Y, L, Z, K = NULL) {
 ##################################################################
 
 #' SSLpredict predicts the labels for unlabeled data
-#'
-#' @param X n1 * p matrix of labelled data points. Here the rows contains the n1 labelled data points. Each data point belongs to R^p
-#' @param Y n1 vector of labels for data points in X
-#' @param Z m1*p matrix of Unlabeled data points
-#' @param K number of classes
-#'
+#' @inheritParams SSLconf
 #' @return A m1 vector of predicted labels for data points in Z
 #'
 #' @export
 #'
 #' @examples
+#'  X <- rbind(matrix(rnorm(10,0,1),5,2),matrix(rnorm(10,1,2),5,2), matrix(rnorm(10,4,3),5,2))
+#' fold_ids <- sample(1:15)
+#' X <- X[fold_ids, ]
+#' Y <- c(1,1,1,1,1,2,2,2,2,2,3,3,3,3,3)
+#' Y <- Y[fold_ids]
+#' Z <- rbind(matrix(rnorm(80,0,1),40,2),matrix(rnorm(80,1,2),40,2), matrix(rnorm(80,4,3),40,2))
+#' Z <- Z[sample(1:120), ]
+#' out <- SSLpredict(X, Y, Z,3)
 
 
 SSLpredict <- function(X, Y, Z, K = NULL) {
@@ -448,14 +466,15 @@ SSLpredict <- function(X, Y, Z, K = NULL) {
   out <- standardizeX(rbind(X,Z))
   Xtilde <- out$tilde[1:nrow(X), ]
   Ztilde <- out$tilde[(nrow(X)+1):(nrow(X)+nrow(Z)), ]
-  out1 <- ChooseAlgorithm(Xtilde, Y, K)
+
   Ytilde <- as.numeric(Y)
   High = matrix(c(0,0,0,0),2,2)
   High_increase = NULL
+  out1 <- ChooseAlgorithm(Xtilde, Y, K)
 
   if (out1 == "KNN") {
     while(nrow(High) !=0){
-      K_for_kNN <- round(sqrt(Xtilde))
+      K_for_kNN <- round(sqrt(nrow(Xtilde)))
       Probability <- stats::predict(caret::knn3(Xtilde, as.factor(Ytilde), k = K_for_kNN), Ztilde)
       maximum <- apply(Probability, 1, max, na.rm = TRUE)
       second_maximum <- apply(Probability, 1, function(row) max(row[-which.max(row)]))
@@ -477,11 +496,23 @@ SSLpredict <- function(X, Y, Z, K = NULL) {
       #################
 
       High <- Ztilde[confidence_measure =="High", ]
-      kNN_fitting <- class::knn(Xtilde,High, as.factor(Ytilde), round(sqrt(nrow(Xtilde))))
+      print(High)
+      print(Xtilde)
+      print(Ytilde)
+      if(is.vector(High) ){
+        High = matrix(High,byrow=T, nrow = 1, ncol = length(High))
+      }
+      print(High)
+      kNN_fitting <- class::knn(data.frame(Xtilde),High, as.factor(Ytilde), round(sqrt(nrow(Xtilde))))
       High_increase <- rbind(High_increase, cbind(High,kNN_fitting))
       Xtilde <- rbind(Xtilde, Ztilde[confidence_measure == "High", ])
       Ytilde <- c(Ytilde, max.col(Probability)[confidence_measure == "High"])
       Ztilde <- Ztilde[confidence_measure !="High", ]
+
+
+      if(is.vector(Ztilde )){
+        Ztilde= as.matrix(Ztilde,nrow = 1)
+      }
     }
 
     kNN_fitting <- class::knn(Xtilde,Ztilde,as.factor(Ytilde), round(sqrt(nrow(Xtilde))))
@@ -517,6 +548,19 @@ SSLpredict <- function(X, Y, Z, K = NULL) {
       #################
 
       High <- Ztilde[confidence_measure =="High", ]
+      if(is.vector(High )){
+        High = as.matrix(High,nrow = 1)
+      }
+      if(nrow(High) == 0){
+        labels <- as.factor(Ytilde)
+        SVM_model <- e1071::svm(labels ~ ., data = cbind(Xtilde, labels), type = "C")
+        SVM_fitting <- stats::predict(SVM_model, Ztilde)
+        High_increase <- rbind(High_increase, cbind(Ztilde,SVM_fitting))
+        High_increase[,1:p] <-High_increase[,1:p] * matrix(out$weights, byrow = T, nrow(High_increase), p) + matrix(out$means, byrow = T, nrow(High_increase), p)
+        return(High_increase)
+
+      }
+
       labels <- as.factor(Ytilde)
       SVM_model <- e1071::svm(labels ~ ., data = cbind(Xtilde, labels), type = "C")
       SVM_fitting <- stats::predict(SVM_model, High)
@@ -524,6 +568,10 @@ SSLpredict <- function(X, Y, Z, K = NULL) {
       Xtilde <- rbind(Xtilde, High)
       Ytilde <- c(Ytilde, max.col(Probability)[confidence_measure == "High"])
       Ztilde <- Ztilde[confidence_measure !="High", ]
+      if(is.vector(Ztilde )){
+        Ztilde= as.matrix(Ztilde,nrow = 1)
+      }
+
     }
     labels <- as.factor(Ytilde)
     SVM_model <- e1071::svm(labels ~ ., data = cbind(Xtilde, labels), type = "C")
@@ -558,25 +606,26 @@ SSLpredict <- function(X, Y, Z, K = NULL) {
         }
       }
       #################
-
+      max = max.col(maximum)
       High <- Ztilde[confidence_measure =="High", ]
-      P <- exp(cbind(1,as.matrix(High)) %*% out2$beta)
-      rsum <- rowSums(P)
-      rsum_mat <- matrix(rsum, nrow(P), ncol(P))
-      Probability <- P/rsum_mat
-      maximum <- max.col(Probability)
-      High_increase <- rbind(High_increase, cbind(High,maximum))
+      if(is.vector(High)){
+        High <- as.matrix(High, nrow = 1)
+      }
+      log_fit <- max[confidence_measure == "High"]
+      High_increase <- rbind(High_increase, cbind(High,log_fit))
       Xtilde <- rbind(Xtilde, Ztilde[confidence_measure == "High", ])
-      Ytilde <- c(Ytilde, max.col(Probability)[confidence_measure == "High"])
+      Ytilde <- c(Ytilde, maximum[confidence_measure == "High"])
       Ztilde <- Ztilde[confidence_measure !="High", ]
+
     }
 
     P <- exp(cbind(1,as.matrix(Ztilde)) %*% out2$beta)
     rsum <- rowSums(P)
     rsum_mat <- matrix(rsum, nrow(P), ncol(P))
     Probability <- P/rsum_mat
-    maximum <- max.col(P)
-    High_increase <- rbind(High_increase, cbind(Ztilde,maximum))
+    log_fit <- max.col(Probability)
+
+    High_increase <- rbind(High_increase, cbind(Ztilde,log_fit))
     High_increase[,1:p] <-High_increase[,1:p] * matrix(out$weights, byrow = T, nrow(High_increase), p) + matrix(out$means, byrow = T, nrow(High_increase), p)
     return(High_increase)
 

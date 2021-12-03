@@ -2,16 +2,29 @@
 % Please edit documentation in R/MyKmeansfunction.R
 \name{MyKmeans}
 \alias{MyKmeans}
-\title{Title}
+\title{Function that implements K-means algorithm.}
 \usage{
 MyKmeans(X, K, M = NULL, numIter = 100)
 }
 \arguments{
-\item{numIter}{}
+\item{X}{n * p matrix of data points}
+
+\item{K}{Number of classes}
+
+\item{M}{K * p matrix of initial cluster centers}
+
+\item{numIter}{Maximum number of iterations}
 }
 \value{
-
+n vector of cluster labels
 }
 \description{
-Title
+Function that implements K-means algorithm.
+}
+\examples{
+X <- matrix(c(12, 5, 2, 3, 1, 3, 4, 4, 2, 5, 5, 7), 4, 3)
+MyKmeans(X, K = 2, numIter =  100)
+# output:
+#      [,1] [,2] [,3] [,4]
+# [1,]    1    2    2    2
 }

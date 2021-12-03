@@ -16,11 +16,58 @@ LRMultiClass(
 )
 }
 \arguments{
-\item{beta_init}{}
+\item{X}{n x p training data, 1st column should be 1s to account for intercept}
+
+\item{y}{a vector of size n of class labels, from 0 to K-1}
+
+\item{Xt}{ntest x p testing data, 1st column should be 1s to account for intercept}
+
+\item{yt}{a vector of size ntest of test class labels, from 0 to K-1}
+
+\item{numIter}{number of FIXED iterations of the algorithm, default value is 50}
+
+\item{eta}{learning rate, default value is 0.1}
+
+\item{lambda}{ridge parameter, default value is 0.1}
+
+\item{beta_init}{(optional) initial starting values of beta for the algorithm, should be p x K matrix}
 }
 \value{
-
+A list of two elements,
+\item{beta}{p x K matrix of estimated beta values after numIter iterations}
+\item{error_train}{(numIter + 1) length vector of training error \% at each iteration (+ starting value)}
 }
 \description{
 Title
+}
+\examples{
+X1 <- matrix(rnorm(50, -3, 1), 50, 1)
+Y1 <- matrix(c(0), 50, 1)
+X2 <- matrix(rnorm(50, 3, 1), 50, 1)
+Y2 <- matrix(c(1), 50, 1)
+X <- c(X1, X2)
+Y <- c(Y1, Y2)
+X <- as.matrix(X)
+Y <- as.matrix(Y)
+random <- sample(nrow(X))
+X <- as.matrix(X[random, ]) # training data from two normal distributions
+Y <- as.matrix(Y[random, ]) # class labels for training data
+# creating test data
+X1t <- matrix(rnorm(10, -3, 1), 10, 1)
+Y1t <- matrix(c(0), 10, 1)
+X2t <- matrix(rnorm(10, 3, 1), 10, 1)
+Y2t <- matrix(c(1), 10, 1)
+Xt <- c(X1t, X2t)
+Yt <- c(Y1t, Y2t)
+Xt <- as.matrix(Xt)
+Yt <- as.matrix(Yt)
+random <- sample(nrow(Xt))
+Xt <- as.matrix(Xt[random, ]) # testing data from the same two normal distributions
+Yt <- as.matrix(Yt[random, ]) # class labels for testing data
+# adding columns of 1's to training and testing data
+colX1 <- rep(1, nrow(X))
+X <- cbind(colX1, X)
+colXt1 <- rep(1, nrow(Xt))
+Xt <- cbind(colXt1, Xt)
+output <- LRMultiClass(X, Y, Xt, Yt, eta = 0.01, numIter = 100, lambda = 1, beta_init = NULL)
 }
