@@ -40,6 +40,7 @@ standardizeX(X)
 
 
 ```{r}
+
   Xtilde <- diamonds[1:2000, -c(1,2,3,4) ]
   Y <-  as.numeric(as.factor(as.matrix(diamonds[1:2000, 2 ])))
   Algorithm(Xtilde, Y, K=NULL)
