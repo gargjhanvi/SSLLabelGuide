@@ -1,16 +1,22 @@
-# Function that implements K-means algorithm. The default number of maximal iterations is 100.
-#' Title
+#' Function that implements K-means algorithm.
 #'
-#' @param X
-#' @param K
-#' @param M
-#' @param numIter
+#' @param X n * p matrix of data points
+#' @param K Number of classes
+
 #'
 #' @return
+#' n vector of cluster labels
 #' @export
 #'
 #' @examples
-MyKmeans <- function(X, K, M = NULL, numIter = 100) {
+#' X <- matrix(c(12, 5, 2, 3, 1, 3, 4, 4, 2, 5, 5, 7), 4, 3)
+#'MyKmeans(X, K = 2)
+#'# output:
+#'#      [,1] [,2] [,3] [,4]
+#'# [1,]    1    2    2    2
+MyKmeans <- function(X, K) {
+  M = NULL
+  numIter = 100
 
   # Check whether M is NULL or not. If NULL, initialize based on K randomly selected points from X. If not NULL, check for compatibility with X dimensions.
 
