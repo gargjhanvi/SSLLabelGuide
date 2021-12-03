@@ -20,6 +20,7 @@ Imports:
     dplyr,
     e1071,
     graphics,
+    grDevices,
     stats
 Depends: 
     R (>= 2.10)
