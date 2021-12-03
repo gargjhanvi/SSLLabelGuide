@@ -19,20 +19,58 @@
 
 #' Title
 #'
-#' @param X
-#' @param y
-#' @param Xt
-#' @param yt
-#' @param numIter
-#' @param eta
-#' @param lambda
-#' @param beta_init
+#' @param X   n x p training data, 1st column should be 1s to account for intercept
+#' @param y   a vector of size n of class labels, from 0 to K-1
+#' @param Xt  ntest x p testing data, 1st column should be 1s to account for intercept
+#' @param yt  a vector of size ntest of test class labels, from 0 to K-1
+
+#' @return A list of two elements,
+#' \item{beta}{p x K matrix of estimated beta values after numIter iterations}
+#' \item{error_train}{(numIter + 1) length vector of training error % at each iteration (+ starting value)}
 #'
-#' @return
 #' @export
 #'
 #' @examples
-LRMultiClass <- function(X, y, Xt, yt, numIter = 50, eta = 0.1, lambda = 1, beta_init = NULL) {
+#' X1 <- matrix(rnorm(50, -3, 1), 50, 1)
+#'Y1 <- matrix(c(0), 50, 1)
+#'X2 <- matrix(rnorm(50, 3, 1), 50, 1)
+#'Y2 <- matrix(c(1), 50, 1)
+#'X <- c(X1, X2)
+#'Y <- c(Y1, Y2)
+#'X <- as.matrix(X)
+#'Y <- as.matrix(Y)
+#'random <- sample(nrow(X))
+#'X <- as.matrix(X[random, ]) # training data from two normal distributions
+#'Y <- as.matrix(Y[random, ]) # class labels for training data
+#'# creating test data
+#'X1t <- matrix(rnorm(10, -3, 1), 10, 1)
+#'Y1t <- matrix(c(0), 10, 1)
+#'X2t <- matrix(rnorm(10, 3, 1), 10, 1)
+#'Y2t <- matrix(c(1), 10, 1)
+#'Xt <- c(X1t, X2t)
+#'Yt <- c(Y1t, Y2t)
+#'Xt <- as.matrix(Xt)
+#'Yt <- as.matrix(Yt)
+#'random <- sample(nrow(Xt))
+#'Xt <- as.matrix(Xt[random, ]) # testing data from the same two normal distributions
+#'Yt <- as.matrix(Yt[random, ]) # class labels for testing data
+#'# adding columns of 1's to training and testing data
+#'colX1 <- rep(1, nrow(X))
+#'X <- cbind(colX1, X)
+
+#'colXt1 <- rep(1, nrow(Xt))
+#'Xt <- cbind(colXt1, Xt)
+#'output <- LRMultiClass(X, Y, Xt, Yt, eta = 0.01, numIter = 100, lambda = 1, beta_init = NULL)
+
+
+
+
+
+
+
+
+
+LRMultiClass <- function(X, y, Xt, yt) {
   ## Check the supplied parameters as described. You can assume that X, Xt are matrices; y, yt are vectors; and numIter, eta, lambda are scalars. You can assume that beta_init is either NULL (default) or a matrix.
   ###################################
   # Storing the number of rows and columns of X and Xt and the number of clusters in variables.
@@ -43,7 +81,10 @@ LRMultiClass <- function(X, y, Xt, yt, numIter = 50, eta = 0.1, lambda = 1, beta
   K <- max(y, yt) + 1 # K is the number of clusters
 
   # Check that the first column of X and Xt are 1s, if not - display appropriate message and stop execution.
-
+   numIter = 50
+   eta = 0.1
+   lambda = 1
+   beta_init = NULL
   if (all(X[, 1] == matrix(c(1), 1, n)) == F) {
     stop("First column of X does not contain all 1's")
   }
@@ -211,5 +252,5 @@ LRMultiClass <- function(X, y, Xt, yt, numIter = 50, eta = 0.1, lambda = 1, beta
   # error_train - (numIter + 1) length vector of training error % at each iteration (+ starting value)
   # error_test - (numIter + 1) length vector of testing error % at each iteration (+ starting value)
   # objective - (numIter + 1) length vector of objective values of the function that we are minimizing at each iteration (+ starting value)
-  return(list(beta = beta, error_train = error_train, error_test = error_test, objective = objective))
+  return(list(beta = beta, error_test = error_test))
 }
