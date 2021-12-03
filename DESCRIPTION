@@ -21,7 +21,8 @@ Imports:
     e1071,
     graphics,
     grDevices,
-    stats
+    stats,
+    tidyverse
 Depends: 
     R (>= 2.10)
 Suggests: 
