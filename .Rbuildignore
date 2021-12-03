@@ -1,3 +1,2 @@
-^SSLLabelGuide\.Rproj$
+^.*\.Rproj$
 ^\.Rproj\.user$
-^LICENSE\.md$
