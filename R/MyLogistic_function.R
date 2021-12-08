@@ -17,7 +17,7 @@
 # error_test - (numIter + 1) length vector of testing error % at each iteration (+ starting value)
 # objective - (numIter + 1) length vector of objective values of the function that we are minimizing at each iteration (+ starting value)
 
-#' Title
+#' Function that implements multi-class logistic regression.
 #'
 #' @param X   n x p training data, 1st column should be 1s to account for intercept
 #' @param y   a vector of size n of class labels, from 0 to K-1
