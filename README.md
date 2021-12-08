@@ -9,6 +9,10 @@ Given n1 labelled samples and m1 unlabeled samples (m1 >> n1) and suppose user c
 Run the following in R:
 
 * devtools::install_github("gargjhanvi/SSLLabelGuide")
+
+For Vignettes
+
+*  devtools::install_github("gargjhanvi/SSLLabelGuide", build_vignettes = T, dependencies = T)
   
   
 ### Usuage
