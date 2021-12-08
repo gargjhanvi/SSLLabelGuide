@@ -221,7 +221,7 @@ ChooseAlgorithm <- function(Xtilde, Y, K = NULL) {
 #' \item{High}{A matrix containing data points of Z that are predicted with high confidence}
 #' \item{Low}{A matrix containing data points of Z that are predicted with low confidence}
 #' \item{Average}{A matrix containing data points of Z that are predicted with moderate confidence}
-#' \item{Remat}{A matrix containing data points of Z that should possibly be relabeled}
+#' \item{Remat}{A matrix containing data points of Z that should possibly be labeled for better prediction}
 #'
 #' @export
 #'
@@ -496,13 +496,11 @@ SSLpredict <- function(X, Y, Z, K = NULL) {
       #################
 
       High <- Ztilde[confidence_measure =="High", ]
-      print(High)
-      print(Xtilde)
-      print(Ytilde)
+
       if(is.vector(High) ){
         High = matrix(High,byrow=T, nrow = 1, ncol = length(High))
       }
-      print(High)
+
       kNN_fitting <- class::knn(data.frame(Xtilde),High, as.factor(Ytilde), round(sqrt(nrow(Xtilde))))
       High_increase <- rbind(High_increase, cbind(High,kNN_fitting))
       Xtilde <- rbind(Xtilde, Ztilde[confidence_measure == "High", ])
