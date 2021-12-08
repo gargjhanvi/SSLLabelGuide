@@ -22,7 +22,7 @@ A list with four elements,
 \item{High}{A matrix containing data points of Z that are predicted with high confidence}
 \item{Low}{A matrix containing data points of Z that are predicted with low confidence}
 \item{Average}{A matrix containing data points of Z that are predicted with moderate confidence}
-\item{Remat}{A matrix containing data points of Z that should possibly be relabeled}
+\item{Remat}{A matrix containing data points of Z that should possibly be labeled for better prediction}
 }
 \description{
 SSLconf divides the unlabeled data into matrices "High", "Low", "Average" based on the confidence in predicting them.

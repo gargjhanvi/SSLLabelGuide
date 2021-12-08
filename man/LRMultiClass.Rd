@@ -2,7 +2,7 @@
 % Please edit documentation in R/MyLogistic_function.R
 \name{LRMultiClass}
 \alias{LRMultiClass}
-\title{Title}
+\title{Function that implements multi-class logistic regression.}
 \usage{
 LRMultiClass(X, y, Xt, yt)
 }
@@ -21,7 +21,7 @@ A list of two elements,
 \item{error_train}{(numIter + 1) length vector of training error \% at each iteration (+ starting value)}
 }
 \description{
-Title
+Function that implements multi-class logistic regression.
 }
 \examples{
 X1 <- matrix(rnorm(50, -3, 1), 50, 1)
